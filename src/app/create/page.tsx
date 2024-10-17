@@ -3,6 +3,7 @@
 import { firebaseConfig, formControls } from "@/utils";
 import Button from "../components/button";
 import { useContext, useState } from "react";
+
 import {
   getStorage,
   ref,
@@ -12,7 +13,7 @@ import {
 import { initializeApp } from "firebase/app";
 import Spinner from "../components/spinner";
 import { GlobalContext } from "../context";
-import { BlogFormData } from "@/utils/types";
+import { BlogFormData, initialBlogFormData } from "@/utils/types";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -97,7 +98,7 @@ export default function Create() {
     console.log(data, "data123");
 
     if (data && data.success) {
-      // setFormData(initialBlogFormData) 
+      setFormData(initialBlogFormData) 
       router.push("/blogs");
     }
   }
