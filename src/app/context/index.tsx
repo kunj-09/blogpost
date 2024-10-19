@@ -14,6 +14,8 @@ import {
   ReactNode,
 } from "react";
 import { Blog, BlogFormData, initialBlogFormData } from "@/utils/types";
+import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 //Add State ka type here
 type ContextType = {
@@ -48,8 +50,11 @@ export default function Global({ children }: { children: ReactNode }) {
   const [formData, setFormData] = useState(initialBlogFormData);
   const [searchQuery , setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Blog[]>([]);
-
+  const pathname = usePathname();
+  const router = useRouter();
   if(session === undefined) return <Spinner></Spinner>
+
+  if(session === null && pathname === "/create") router.push("/")
   
 
   return (
