@@ -43,3 +43,4 @@ export interface Blog{
     comments:string[];
     image :string;  
 }
+

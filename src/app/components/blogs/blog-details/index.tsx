@@ -1,6 +1,5 @@
 "use client";
 
-
 import { Blog } from "@/utils/types";
 import Button from "../../button";
 import { useSession } from "next-auth/react";
@@ -16,12 +15,15 @@ export default function BlogDetailsHome({ blogData }: { blogData: Blog }) {
   const { data: session } = useSession();
   const router = useRouter();
 
+  // State to store reactions
+  const [userReaction, setUserReaction] = useState<string | null>(null);
+
   async function handleCommentSave() {
-    let extractComments = [...blogData.comments]; // ... spread operator because jo comments hai woh rehne chaiye usme or comments koi kare toh add hona chaiye
+    let extractComments = [...blogData.comments];
 
-    extractComments.push(`${comment}|${session?.user?.name}`);//the value of the new comment (comment) and the username (session?.user?.name), combine them into a string using a pipe | as a separator, and then push this new string into the extractComments array.
+    extractComments.push(`${comment}|${session?.user?.name}`);
 
-    const response = await fetch(`/api/blog-post/update-post`, {
+    const response = await fetch("/api/blog-post/update-post", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -34,16 +36,35 @@ export default function BlogDetailsHome({ blogData }: { blogData: Blog }) {
 
     const data = await response.json();
 
-    console.log(data, "comment123");
-
     if (data && data.success) {
       setComment("");
       router.refresh();
     }
   }
 
+  // Handle Reaction Save
+  async function handleReaction(reaction: string) {
+    setUserReaction(reaction); // Update the reaction for the user
+
+    const response = await fetch("/api/blog-post/update-reaction", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: blogData?.id,
+        reaction: { type: reaction, user: session?.user?.name },
+      }),
+    });
+
+    const data = await response.json();
+    if (data && data.success) {
+      router.refresh();
+    }
+  }
+
   useEffect(() => {
-    let interval = setInterval(() => {     ///comments turant reflect ho isliye . koi dusre account se dekh raha ho toh turant dikhna chaiye na comment kiya toh 
+    let interval = setInterval(() => {
       router.refresh();
     }, 2000);
 
@@ -109,7 +130,7 @@ export default function BlogDetailsHome({ blogData }: { blogData: Blog }) {
               </div>
             </div>
             <div className="w-full lg:w-8/12 flex gap-4">
-              {session !== null ? (     /// yeh session se login hai ke nhi .login ha toh hi comment kar payega user samjo 
+              {session !== null ? (
                 <>
                   <input
                     name="comment"
@@ -127,6 +148,41 @@ export default function BlogDetailsHome({ blogData }: { blogData: Blog }) {
                 </>
               ) : null}
             </div>
+
+            {/* Reaction Section */}
+            {session !== null && (
+              <div className="flex gap-4 py-4">
+                <Button
+                  text="👍"
+                  onClick={() => handleReaction("like")}
+                  // className={`${
+                  //   userReaction === "like"
+                  //     ? "bg-green-500 text-white"
+                  //     : "bg-gray-200"
+                  // } p-2 rounded-full`}
+                />
+                <Button
+                  text="❤️"
+                  onClick={() => handleReaction("love")}
+                  // className={`${
+                  //   userReaction === "love"
+                  //     ? "bg-red-500 text-white"
+                  //     : "bg-gray-200"
+                  // } p-2 rounded-full`}
+                />
+                <Button
+                  text="😮"
+                  onClick={() => handleReaction("wow")}
+                  // className={`${
+                  //   userReaction === "wow"
+                  //     ? "bg-yellow-500 text-white"
+                  //     : "bg-gray-200"
+                  // } p-2 rounded-full`}
+                />
+              </div>
+            )}
+
+            {/* Comments Section */}
             <section className="dark:bg-gray-900 py-8 lg:py-16 w-full lg:w-8/12">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg lg:text-2xl font-bold text-black dark:text-white">
@@ -139,15 +195,9 @@ export default function BlogDetailsHome({ blogData }: { blogData: Blog }) {
                       <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center">
                           <p className="inline-flex items-center mr-3 text-sm text-black dark:text-white font-semibold">
-                            {comment.split("|")[1] === blogData?.userid // yeh esa split isliye kiya because apan ne woh sub ko name ke sath join kiya tha username me toh yaha se username alag kiya split use karke
-                              ? `${
-                                  comment.split("|")[1].split("_")[0] //If the original comment was "user123|This_is_a_comment", the expression would evaluate to:
-                                                                        //It first splits the comment into ["user123", "This_is_a_comment"].
-                                                                        // Then it accesses "This_is_a_comment" and splits it into ["This", "is", "a", "comment"].
-                                                                        //Finally, it takes the first element, which is "This".
-                                } (Author)`                             // yeh split use karke comment section me name show h raha ha kisne comment woh samjo
+                            {comment.split("|")[1] === blogData?.userid
+                              ? `${comment.split("|")[1].split("_")[0]} (Author)`
                               : comment.split("|")[1].split("_")[0]}
-    
                           </p>
                         </div>
                       </div>

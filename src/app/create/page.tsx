@@ -79,7 +79,13 @@ export default function Create() {
   }
   async function handleSaveBlogPost() {
     console.log(formData);
-
+  
+    // Fallback for when session is not available
+    const userId = session?.user?.name || "Anonymous"; // Fallback to 'Anonymous' if user is not logged in
+    const userImage =
+      session?.user?.image ||
+      "https://in.pinterest.com/pin/5770305768209793"; // Provide a default user image if session is not available
+  
     const res = await fetch("/api/blog-post/add-post", {
       method: "POST",
       headers: {
@@ -87,21 +93,22 @@ export default function Create() {
       },
       body: JSON.stringify({
         ...formData,
-        userid: session?.user?.name,
-        userimage: session?.user?.image,
-        comments: [],
+        userid: userId, // Use the session value or fallback
+        userimage: userImage, // Use the session value or fallback
+        comments: [], // Empty comments array initially
       }),
     });
-
+  
     const data = await res.json();
-
+  
     console.log(data, "data123");
-
+  
     if (data && data.success) {
-      setFormData(initialBlogFormData) 
-      router.push("/blogs");
+      setFormData(initialBlogFormData); // Reset the form data after successful submission
+      router.push("/blogs"); // Navigate to the blogs page
     }
   }
+  
 
   console.log(formData,'formData');
 

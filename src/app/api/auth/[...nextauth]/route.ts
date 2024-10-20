@@ -1,36 +1,55 @@
 import { AuthOptions } from "next-auth";
 import GithubProvider from "next-auth/providers/github";
+import CredentialsProvider from "next-auth/providers/credentials";
 import NextAuth from "next-auth/next";
+import { compare } from "bcryptjs"; // Importing the compare function
+import prisma from "@/database"; // Your Prisma instance
 
-// Defining authentication options for NextAuth
 const authOptions: AuthOptions = {
   providers: [
     GithubProvider({
-      // Using environment variables for security
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
     }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "text", placeholder: "your email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials: { email: string; password: string } | undefined) {
+        if (!credentials) {
+          throw new Error("Credentials not provided");
+        }
+      
+        const { email, password } = credentials;
+      
+        // Implement your user authentication logic here
+        const user = await prisma.user.findUnique({
+          where: { email },
+        });
+      
+        if (user && (await compare(password, user.password))) {
+          // Convert id to string
+          return { id: String(user.id), name: user.name, email: user.email }; // Return user object with id as a string
+        }
+      
+        return null; // Return null if authentication fails
+      }
+      
+    }),
   ],
   callbacks: {
-    // The session callback receives both the session and token objects.
-    // In this example, the user's name is modified by appending the token.sub
-    // (which is usually the user ID or identifier) to the user's name.
     async session({ session, token }) {
-      console.log(session, token); // Logging session and token for debugging
-
-      // Modify the session user name by appending token.sub
       if (session?.user?.name && token?.sub) {
         session.user.name = `${session.user.name}_${token.sub}`;
       }
-
-      return session; // Return modified session object
+      return session;
     },
   },
-  // Using an environment variable for the secret key
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-// NextAuth configuration exported as GET and POST handlers
 const nextAuth = NextAuth(authOptions);
 
 export { nextAuth as GET, nextAuth as POST };
