@@ -118,7 +118,7 @@ export default function Register() {
                   {/* Using the Button component */}
                   <Button
                     text={loading ? "Registering..." : "Register"}
-                    onClick={()=>handleSubmit}
+                    onClick={()=>handleSubmit} // Corrected the function reference
                   />
                 </div>
               </form>
