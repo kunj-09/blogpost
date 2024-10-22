@@ -42,10 +42,10 @@ export default function BlogDetailsHome({ blogData }: { blogData: Blog }) {
     }
   }
 
+  // const [userReaction, setUserReaction] = useState<string | null>(null);
+
   // Handle Reaction Save
   async function handleReaction(reaction: string) {
-    setUserReaction(reaction); // Update the reaction for the user
-
     const response = await fetch("/api/blog-post/update-reaction", {
       method: "PUT",
       headers: {
@@ -56,10 +56,31 @@ export default function BlogDetailsHome({ blogData }: { blogData: Blog }) {
         reaction: { type: reaction, user: session?.user?.name },
       }),
     });
-
+  
     const data = await response.json();
     if (data && data.success) {
-      router.refresh();
+      setUserReaction(reaction); // Update the user reaction state
+      router.refresh(); // Refresh to get updated data
+    }
+  }
+  
+  // Handle Reaction Delete
+  async function handleReactionDelete() {
+    const response = await fetch("/api/blog-post/delete-reaction", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: blogData?.id,
+        user: session?.user?.name,
+      }),
+    });
+  
+    const data = await response.json();
+    if (data && data.success) {
+      setUserReaction(null); // Clear the user reaction state
+      router.refresh(); // Refresh to get updated data
     }
   }
 
