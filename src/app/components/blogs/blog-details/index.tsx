@@ -45,44 +45,49 @@ export default function BlogDetailsHome({ blogData }: { blogData: Blog }) {
   // const [userReaction, setUserReaction] = useState<string | null>(null);
 
   // Handle Reaction Save
-  async function handleReaction(reaction: string) {
+  // Handle Reaction Save
+async function handleReaction(reactionType: string) {
+  if (!session) {
+    // Redirect to login if not logged in
+    router.push("/auth/login");
+    return;
+  }
+
+  // Construct the reaction payload
+  const payload = {
+    postId: blogData.id,
+    user: session?.user?.name || session?.user?.email,
+    type: reactionType,
+  };
+
+  try {
+    // Send the reaction to the server
     const response = await fetch("/api/blog-post/update-reaction", {
-      method: "PUT",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        id: blogData?.id,
-        reaction: { type: reaction, user: session?.user?.name },
-      }),
+      body: JSON.stringify(payload),
     });
-  
+
     const data = await response.json();
-    if (data && data.success) {
-      setUserReaction(reaction); // Update the user reaction state
-      router.refresh(); // Refresh to get updated data
+
+    if (data.success) {
+      setUserReaction(reactionType); // Optionally set the user reaction in state
+      router.refresh(); // Refresh the page to update reactions
+    } else {
+      console.error("Failed to save reaction:", data.message);
     }
+  } catch (error) {
+    console.error("Error saving reaction:", error);
   }
-  
-  // Handle Reaction Delete
-  async function handleReactionDelete() {
-    const response = await fetch("/api/blog-post/delete-reaction", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        id: blogData?.id,
-        user: session?.user?.name,
-      }),
-    });
-  
-    const data = await response.json();
-    if (data && data.success) {
-      setUserReaction(null); // Clear the user reaction state
-      router.refresh(); // Refresh to get updated data
-    }
-  }
+}
+
+
+
+
+
+
 
   useEffect(() => {
     let interval = setInterval(() => {
@@ -217,7 +222,9 @@ export default function BlogDetailsHome({ blogData }: { blogData: Blog }) {
                         <div className="flex items-center">
                           <p className="inline-flex items-center mr-3 text-sm text-black dark:text-white font-semibold">
                             {comment.split("|")[1] === blogData?.userid
-                              ? `${comment.split("|")[1].split("_")[0]} (Author)`
+                              ? `${
+                                  comment.split("|")[1].split("_")[0]
+                                } (Author)`
                               : comment.split("|")[1].split("_")[0]}
                           </p>
                         </div>
